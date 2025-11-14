@@ -1,0 +1,10 @@
+[package]
+name = "proyecto3-space-travel"
+version = "1.0.0"
+edition = "2021"
+
+
+[dependencies]
+minifb = "0.27"
+nalgebra = "0.33"
+
