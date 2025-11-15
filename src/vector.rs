@@ -12,14 +12,6 @@ impl Vector3 {
         Vector3 { x, y, z }
     }
 
-    pub fn zero() -> Self {
-        Vector3 { x: 0.0, y: 0.0, z: 0.0 }
-    }
-
-    pub fn one() -> Self {
-        Vector3 { x: 1.0, y: 1.0, z: 1.0 }
-    }
-
     pub fn length(&self) -> f32 {
         (self.x * self.x + self.y * self.y + self.z * self.z).sqrt()
     }
@@ -46,14 +38,6 @@ impl Vector3 {
             x: self.y * other.z - self.z * other.y,
             y: self.z * other.x - self.x * other.z,
             z: self.x * other.y - self.y * other.x,
-        }
-    }
-
-    pub fn scale(&self, scalar: f32) -> Self {
-        Vector3 {
-            x: self.x * scalar,
-            y: self.y * scalar,
-            z: self.z * scalar,
         }
     }
 }

@@ -20,31 +20,30 @@ impl PlanetShader for GasPlanetShader {
         let white = ShaderColor::from_rgb(255, 250, 230);         
         let red_spot = ShaderColor::from_rgb(200, 60, 30);         
         
-        let latitude = uv.1;
         let animated_longitude = uv.0 + uniforms.time * 0.015;
         
         // === BANDAS BASE CON TEXTURA ===
-        let band_pos = latitude * 14.0;
+        let band_pos = uv.1 * 14.0;
         let band_index = band_pos.floor() as i32 % 8;
         let band_fract = band_pos.fract();
         
         let jet_stream = fbm(
             animated_longitude * 12.0,
-            latitude * 5.0,
+            uv.1 * 5.0,
             5
         ) * 0.25;
         
         // Remolinos y vórtices a lo largo de las bandas
         let vortices = fbm(
-            animated_longitude * 8.0 + latitude * 20.0,
-            latitude * 8.0,
+            animated_longitude * 8.0 + uv.1 * 20.0,
+            uv.1 * 8.0,
             4
         ) * 0.15;
         
         // Textura fina
         let fine_texture = fbm(
             animated_longitude * 25.0,
-            latitude * 20.0,
+            uv.1 * 20.0,
             3
         ) * 0.08;
         
@@ -69,7 +68,7 @@ impl PlanetShader for GasPlanetShader {
         let storm_x = 0.3;
         let storm_y = 0.4;
         let dx = (animated_longitude - storm_x) * 2.5; 
-        let dy = latitude - storm_y;
+        let dy = uv.1 - storm_y;
         let dist_storm = (dx * dx + dy * dy).sqrt();
         
         if dist_storm < 0.15 {
@@ -81,13 +80,13 @@ impl PlanetShader for GasPlanetShader {
         }
         
         // === ÓVALOS BLANCOS (tormentas menores) ===
-        let oval1_dist = ((animated_longitude - 0.6).powi(2) * 4.0 + (latitude - 0.55).powi(2)).sqrt();
+        let oval1_dist = ((animated_longitude - 0.6).powi(2) * 4.0 + (uv.1 - 0.55).powi(2)).sqrt();
         if oval1_dist < 0.05 {
             let oval_str = smoothstep(0.05, 0.02, oval1_dist);
             final_color = mix_color(final_color, white, oval_str * 0.8);
         }
         
-        let oval2_dist = ((animated_longitude - 0.75).powi(2) * 5.0 + (latitude - 0.32).powi(2)).sqrt();
+        let oval2_dist = ((animated_longitude - 0.75).powi(2) * 5.0 + (uv.1 - 0.32).powi(2)).sqrt();
         if oval2_dist < 0.04 {
             let oval_str = smoothstep(0.04, 0.015, oval2_dist);
             final_color = mix_color(final_color, cream, oval_str * 0.7);

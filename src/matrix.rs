@@ -125,15 +125,3 @@ pub fn create_projection_matrix(fov_y: f32, aspect: f32, near: f32, far: f32) ->
         0.0, 0.0, -1.0, 0.0,
     )
 }
-
-pub fn create_viewport_matrix(x: f32, y: f32, width: f32, height: f32) -> Matrix4<f32> {
-    let half_width = width / 2.0;
-    let half_height = height / 2.0;
-
-    create_matrix4(
-        half_width, 0.0, 0.0, x + half_width,
-        0.0, -half_height, 0.0, y + half_height,
-        0.0, 0.0, 1.0, 0.0,
-        0.0, 0.0, 0.0, 1.0,
-    )
-}

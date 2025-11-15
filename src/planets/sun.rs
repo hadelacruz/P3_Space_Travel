@@ -52,26 +52,9 @@ impl PlanetShader for SunShader {
             position.z + normal.z * total_displacement,
         );
         
-        let epsilon = 0.01;
-        let neighbor_noise = fbm3d(
-            (position.x + epsilon) * 1.5 + uniforms.time * 0.2,
-            (position.y + epsilon) * 1.5 + uniforms.time * 0.15,
-            (position.z + epsilon) * 1.5,
-            3
-        ) * 0.02;
-        
-        let tangent_displacement = neighbor_noise - plasma_wave;
-        let normal_perturbation = Vector3::new(
-            -tangent_displacement,
-            -tangent_displacement,
-            -tangent_displacement,
-        ) * 0.2; 
-        
-        let perturbed_normal = Vector3::new(
-            normal.x + normal_perturbation.x,
-            normal.y + normal_perturbation.y,
-            normal.z + normal_perturbation.z,
-        ).normalize();
+        // Perturbar normal basada en el plasma
+        let tangent = total_displacement * 0.2;
+        let perturbed_normal = (normal + Vector3::new(-tangent, -tangent, -tangent)).normalize();
         
         (deformed_position, perturbed_normal)
     }
@@ -80,7 +63,6 @@ impl PlanetShader for SunShader {
         // === PALETA DE COLORES DEL SOL ===
         let core_white = ShaderColor::from_rgb(255, 255, 255);     
         let bright_yellow = ShaderColor::from_rgb(255, 250, 200);   
-        let _yellow = ShaderColor::from_rgb(255, 220, 100);         
         let orange = ShaderColor::from_rgb(255, 150, 50);           
         let red_orange = ShaderColor::from_rgb(255, 100, 30);       
         let deep_red = ShaderColor::from_rgb(200, 50, 20);          

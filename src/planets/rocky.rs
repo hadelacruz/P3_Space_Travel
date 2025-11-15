@@ -32,14 +32,8 @@ impl PlanetShader for RockyPlanetShader {
         ) * 0.03;
         
         // Capa 4: Cráteres procedurales
-        let crater_x = position.x * 8.0;
-        let crater_y = position.y * 8.0;
-        let crater_pattern = voronoi_noise(crater_x, crater_y);
-        let crater_depth = if crater_pattern < 0.2 {
-            -0.05 * (1.0 - crater_pattern / 0.2)
-        } else {
-            0.0
-        };
+        let crater_pattern = voronoi_noise(position.x * 8.0, position.y * 8.0);
+        let crater_depth = smoothstep(0.2, 0.0, crater_pattern) * -0.05;
         
         // Capa 5: Animación sutil
         let tectonic_pulse = (uniforms.time * 0.5).sin() * 0.01;
@@ -60,27 +54,9 @@ impl PlanetShader for RockyPlanetShader {
             position.z + normal.z * total_displacement,
         );
         
-        // Recalcular normal aproximada basada en deformación
-        let epsilon = 0.01;
-        let neighbor_noise = fbm3d(
-            (position.x + epsilon) * 2.0,
-            (position.y + epsilon) * 2.0,
-            (position.z + epsilon) * 2.0,
-            4
-        ) * 0.15;
-        
-        let tangent_displacement = neighbor_noise - mountain_noise;
-        let normal_perturbation = Vector3::new(
-            -tangent_displacement,
-            -tangent_displacement,
-            -tangent_displacement,
-        ) * 0.3;
-        
-        let perturbed_normal = Vector3::new(
-            normal.x + normal_perturbation.x,
-            normal.y + normal_perturbation.y,
-            normal.z + normal_perturbation.z,
-        ).normalize();
+        // Perturbar normal basada en deformación del terreno
+        let tangent = total_displacement * 0.3;
+        let perturbed_normal = (normal + Vector3::new(-tangent, -tangent, -tangent)).normalize();
         
         (deformed_position, perturbed_normal)
     }

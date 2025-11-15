@@ -1,6 +1,10 @@
-# Proyecto 3: Sistema Solar - Space Travel 🌌
+# Proyecto 3- Space Travel 🌌
 
 Simulación de un sistema solar procedural usando un software renderer diseñado desde cero en Rust.
+
+## Video
+
+## https://youtu.be/bmLrgTaGQrE ##
 
 ## Características Implementadas ✨
 
@@ -9,8 +13,6 @@ Simulación de un sistema solar procedural usando un software renderer diseñado
 - ✅ **Sol Central**: Estrella con efectos de plasma, llamaradas y emisión de luz
 - ✅ **Múltiples Planetas**: 5 planetas con shaders únicos y procedurales
 - ✅ **Plano Eclíptico**: Todos los planetas orbitan en un plano común
-- ✅ **Visualización del Plano**: Cuadrícula y círculos orbitales visibles
-- ✅ **Ejes de Coordenadas**: Ejes X (rojo), Y (verde), Z (azul) para referencia
 - ✅ **Órbitas Circulares**: Cada planeta se traslada en su órbita
 - ✅ **Rotación sobre el Eje**: Todos los cuerpos rotan sobre sí mismos
 - ✅ **Cámara Móvil**: Control completo de la cámara en el plano eclíptico
@@ -19,33 +21,33 @@ Simulación de un sistema solar procedural usando un software renderer diseñado
 
 ### Planetas del Sistema
 
-1. **Sol** ☀️
+1. **Sol** 
    - Superficie animada con plasma
    - Efectos de llamaradas solares
    - Prominencias procedurales
    - Pulsación de intensidad
 
-2. **Planeta Rocoso** 🪨
+2. **Planeta Rocoso** 
    - Terreno con relieve procedural
    - Montañas, colinas y cráteres
    - Texturas grises realistas
 
-3. **Gigante Gaseoso** 🌀
+3. **Gigante Gaseoso** 
    - Bandas atmosféricas animadas
    - Colores vibrantes
    - Tormentas procedurales
 
-4. **Planeta de Cristal** 💎
+4. **Planeta de Cristal** 
    - Superficies cristalinas
    - Efectos de refracción
    - Colores brillantes
 
-5. **Planeta de Lava/Nebulosa** 🌋
+5. **Planeta Nebulosa** 
    - Superficie volcánica
    - Flujos de lava animados
    - Efectos de calor
 
-6. **Planeta con Anillos (Saturno)** 🪐
+6. **Planeta Metalico** 
    - Sistema de anillos
    - Atmósfera gaseosa
    - Colores característicos
@@ -102,7 +104,9 @@ src/
 ├── framebuffer.rs       # Buffer de color y profundidad
 ├── obj_loader.rs        # Cargador de modelos .obj
 ├── skybox.rs            # Renderizado de estrellas de fondo
-├── matrix.rs            
+├── matrix.rs 
+├── planet.rs  
+├── render.rs             
 └── planets/
     ├── mod.rs          # Módulo de planetas
     ├── sun.rs          # Shader del sol
@@ -113,21 +117,4 @@ src/
     └── metallic.rs     # Shader planeta con anillos
 ```
 
-## Dependencias 📦
-
-- **minifb**: Ventana y framebuffer (0.27)
-- **nalgebra**: Matemáticas de matrices y vectores (0.33)
-
-## Características Técnicas Destacadas 🌟
-
-1. **Renderizado 100% en CPU**: Sin uso de GPU/OpenGL
-2. **Shaders Procedurales**: Todo generado algorítmicamente
-3. **Deformación de Geometría**: Los vertex shaders modifican la malla
-4. **Animaciones en Tiempo Real**: Todos los efectos son dinámicos
-5. **Sistema de Órbitas**: Física orbital simplificada
-6. **Cámara Orbital**: Control intuitivo de la vista
-7. **Plano Eclíptico Visual**: Cuadrícula 3D y círculos orbitales
-8. **Sistema de Coordenadas**: Ejes X, Y, Z visibles para orientación
-9. **Skybox Estelar**: ~800 estrellas procedurales con efecto de parpadeo
-10. **Distribución Esférica**: Estrellas distribuidas uniformemente usando coordenadas esféricas
 
