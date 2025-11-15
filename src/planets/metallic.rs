@@ -1,18 +1,13 @@
-// ============================================================================
-// PLANETA 5: PLANETA METÁLICO CON PICOS/PÚAS
-// Características: Superficie con prickles/picos generados en VERTEX SHADER
-// ============================================================================
-
 use crate::vector::Vector3;
 use crate::shaders::{ShaderColor, ShaderUniforms, PlanetShader, fbm, fbm3d, voronoi_noise, smoothstep, mix_color};
 
-pub struct SaturnShader;
+pub struct MetallicPlanetShader;
 
-impl PlanetShader for SaturnShader {
+impl PlanetShader for MetallicPlanetShader {
     fn vertex_shader(&self, position: Vector3, normal: Vector3, _uv: (f32, f32), uniforms: &ShaderUniforms) -> (Vector3, Vector3) {
         // === GENERAR PICOS/PÚAS PROCEDURALMENTE ===
         
-        // CAPA 1: Picos grandes principales (usando Voronoi para distribución)
+        // CAPA 1: Picos grandes principales
         let voronoi_scale = 15.0;
         let voronoi_pattern = voronoi_noise(
             position.x * voronoi_scale + position.z * voronoi_scale,
@@ -21,7 +16,7 @@ impl PlanetShader for SaturnShader {
         
         // Los picos se generan donde el Voronoi es pequeño (centros de células)
         let spike_large = if voronoi_pattern < 0.15 {
-            smoothstep(0.15, 0.05, voronoi_pattern) * 0.35 // Picos grandes
+            smoothstep(0.15, 0.05, voronoi_pattern) * 0.35 
         } else {
             0.0
         };
@@ -38,7 +33,7 @@ impl PlanetShader for SaturnShader {
             0.0
         };
         
-        // CAPA 3: Picos pequeños (muy densos, como púas)
+        // CAPA 3: Picos pequeños 
         let voronoi_small = voronoi_noise(
             position.x * 40.0 + uniforms.time * 0.1 + position.z * 40.0,
             position.y * 40.0
@@ -50,7 +45,7 @@ impl PlanetShader for SaturnShader {
             0.0
         };
         
-        // CAPA 4: Rugosidad base (textura áspera metálica)
+        // CAPA 4: Rugosidad base
         let roughness = fbm3d(
             position.x * 50.0,
             position.y * 50.0,
@@ -61,14 +56,8 @@ impl PlanetShader for SaturnShader {
         // CAPA 5: Deformación animada (pulsación metálica)
         let pulse = (uniforms.time * 2.0 + position.length() * 5.0).sin() * 0.02;
         
-        // Combinar todas las capas de picos
-        let total_displacement = spike_large + spike_medium + spike_small + roughness + pulse;
-        
-        // Desplazar el vértice a lo largo de la normal (hacia afuera)
+        let total_displacement = spike_large + spike_medium + spike_small + roughness + pulse;        
         let displaced_position = position + normal * total_displacement;
-        
-        // Recalcular la normal basada en los picos
-        // (aproximación: la normal apunta más hacia afuera donde hay picos)
         let spike_factor = spike_large * 2.0 + spike_medium * 1.5 + spike_small;
         let adjusted_normal = (normal + normal * spike_factor).normalize();
         
@@ -77,22 +66,20 @@ impl PlanetShader for SaturnShader {
 
     fn fragment_shader(&self, position: Vector3, normal: Vector3, uv: (f32, f32), uniforms: &ShaderUniforms) -> ShaderColor {
         // === PALETA METÁLICA ===
-        let dark_metal = ShaderColor::from_rgb(40, 45, 50);        // Metal oscuro
-        let medium_metal = ShaderColor::from_rgb(80, 90, 100);     // Acero
-        let light_metal = ShaderColor::from_rgb(140, 150, 160);    // Plata oscura
-        let bright_metal = ShaderColor::from_rgb(200, 210, 220);   // Plata brillante
-        let chrome = ShaderColor::from_rgb(240, 245, 250);         // Cromado
-        let rust_accent = ShaderColor::from_rgb(120, 80, 60);      // Acento oxidado
+        let dark_metal = ShaderColor::from_rgb(40, 45, 50);        
+        let medium_metal = ShaderColor::from_rgb(80, 90, 100);     
+        let light_metal = ShaderColor::from_rgb(140, 150, 160);    
+        let bright_metal = ShaderColor::from_rgb(200, 210, 220);   
+        let chrome = ShaderColor::from_rgb(240, 245, 250);        
+        let rust_accent = ShaderColor::from_rgb(120, 80, 60);     
         
         // === TEXTURA METÁLICA PROCEDURAL ===
         
-        // Patrón Voronoi para variación metálica
         let metal_pattern = voronoi_noise(
             position.x * 20.0 + position.z * 20.0,
             position.y * 20.0
         );
         
-        // Ruido para imperfecciones metálicas
         let imperfections = fbm3d(
             position.x * 30.0,
             position.y * 30.0,
@@ -100,7 +87,6 @@ impl PlanetShader for SaturnShader {
             4
         );
         
-        // Rayones y arañazos (scratch pattern)
         let scratches = fbm(
             uv.0 * 100.0,
             uv.1 * 100.0,
@@ -126,17 +112,15 @@ impl PlanetShader for SaturnShader {
         let light_dir = uniforms.light_direction.normalize();
         let view_dir = (uniforms.camera_position - position).normalize();
         
-        // Difusa (metales reflejan poco difusamente)
+        // Difusa 
         let diffuse = normal.dot(&light_dir).max(0.0) * 0.3;
         
-        // Especular FUERTE (metales son muy especulares)
+        // Especular FUERTE 
         let reflect_dir = normal * (2.0 * normal.dot(&light_dir)) - light_dir;
-        let specular = view_dir.dot(&reflect_dir).max(0.0).powf(32.0) * 1.2; // Exponente alto para brillo concentrado
-        
-        // Especular secundario (reflexión más amplia)
+        let specular = view_dir.dot(&reflect_dir).max(0.0).powf(32.0) * 1.2; 
         let specular_broad = view_dir.dot(&reflect_dir).max(0.0).powf(8.0) * 0.5;
         
-        // Fresnel effect (bordes más brillantes)
+        // Fresnel effect 
         let fresnel = (1.0 - view_dir.dot(&normal).abs()).powf(3.0) * 0.4;
         
         // Ambiente metálico
@@ -155,7 +139,7 @@ impl PlanetShader for SaturnShader {
             1.0,
         );
         
-        // Añadir highlight especular adicional (brillo puro)
+
         let final_color = if specular > 0.8 {
             let highlight_amount = (specular - 0.8) * 5.0;
             mix_color(lit_color, chrome, highlight_amount.min(0.5))

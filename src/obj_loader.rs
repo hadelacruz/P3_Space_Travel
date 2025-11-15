@@ -18,7 +18,6 @@ impl ObjModel {
         
         let mut indices: Vec<(usize, usize, usize)> = Vec::new();
         
-        // Procesamiento temporal de vértices y normales
         let mut temp_vertices: Vec<Vector3> = Vec::new();
         let mut temp_normals: Vec<Vector3> = Vec::new();
         let mut temp_uvs: Vec<(f32, f32)> = Vec::new();

@@ -3,72 +3,27 @@ mod shaders;
 mod planets;
 mod obj_loader;
 mod framebuffer;
+mod skybox;
+mod camera;
+mod matrix;
 
 use minifb::{Key, Window, WindowOptions};
-use nalgebra::{Matrix4, Vector3 as Vec3, Vector4, Point3};
+use nalgebra::{Matrix4, Vector3 as Vec3, Vector4};
 use std::f32::consts::PI;
 use vector::Vector3;
 use shaders::{ShaderColor, ShaderUniforms, PlanetShader};
 use planets::*;
 use obj_loader::ObjModel;
 use framebuffer::{Framebuffer, rgb_to_u32};
+use skybox::render_skybox;
+use camera::Camera;
+use matrix::{create_model_matrix, multiply_matrix_vector4, create_projection_matrix};
 
 const WIDTH: usize = 800;
 const HEIGHT: usize = 600;
 const FOV: f32 = PI / 3.0;
 const NEAR: f32 = 0.1;
 const FAR: f32 = 100.0;
-
-struct Camera {
-    position: Vec3<f32>,
-    target: Vec3<f32>,
-    up: Vec3<f32>,
-    angle: f32,
-    distance: f32,
-    height: f32,
-}
-
-impl Camera {
-    fn new(distance: f32) -> Self {
-        Camera {
-            position: Vec3::new(0.0, 5.0, distance),
-            target: Vec3::new(0.0, 0.0, 0.0),
-            up: Vec3::new(0.0, 1.0, 0.0),
-            angle: 0.0,
-            distance,
-            height: 5.0,
-        }
-    }
-
-    fn update_position(&mut self) {
-        self.position.x = self.angle.cos() * self.distance;
-        self.position.z = self.angle.sin() * self.distance;
-        self.position.y = self.height;
-    }
-
-    fn rotate(&mut self, delta_angle: f32) {
-        self.angle += delta_angle;
-        self.update_position();
-    }
-
-    fn zoom(&mut self, delta: f32) {
-        self.distance = (self.distance + delta).max(10.0).min(100.0);
-        self.update_position();
-    }
-
-    fn change_height(&mut self, delta: f32) {
-        self.height = (self.height + delta).max(2.0).min(20.0);
-        self.update_position();
-    }
-
-    fn get_view_matrix(&self) -> Matrix4<f32> {
-        Matrix4::look_at_rh(
-            &Point3::from(self.position),
-            &Point3::from(self.target),
-            &self.up,
-        )
-    }
-}
 
 struct Planet {
     shader: Box<dyn PlanetShader>,
@@ -107,7 +62,6 @@ impl Planet {
     }
 
     fn update(&mut self, dt: f32) {
-        // Solo traslación orbital, sin rotación sobre el eje
         self.orbit_angle += self.orbit_speed * dt;
         
         self.position.x = self.orbit_angle.cos() * self.orbit_radius;
@@ -115,22 +69,26 @@ impl Planet {
     }
 
     fn get_model_matrix(&self) -> Matrix4<f32> {
-        let translation = Matrix4::new_translation(&self.position);
-        // Sin rotación - solo traslación y escala
-        let scale = Matrix4::new_scaling(self.scale);
-        translation * scale
+        // Usar la función manual de creación de matriz de modelo
+        create_model_matrix(
+            self.position,
+            self.scale,
+            Vec3::new(0.0, 0.0, 0.0) // Sin rotación por ahora
+        )
     }
 }
 
 fn transform_vertex(v: &Vector3, matrix: &Matrix4<f32>) -> Vec3<f32> {
     let v4 = Vector4::new(v.x, v.y, v.z, 1.0);
-    let transformed = matrix * v4;
+    // Usar la función manual de multiplicación matriz-vector
+    let transformed = multiply_matrix_vector4(matrix, &v4);
     Vec3::new(transformed.x, transformed.y, transformed.z)
 }
 
 fn project_vertex(v: &Vec3<f32>, projection: &Matrix4<f32>) -> Option<(i32, i32, f32)> {
     let v4 = Vector4::new(v.x, v.y, v.z, 1.0);
-    let projected = projection * v4;
+    // Usar la función manual de multiplicación matriz-vector
+    let projected = multiply_matrix_vector4(projection, &v4);
     
     if projected.w <= 0.0 {
         return None;
@@ -211,7 +169,6 @@ fn draw_line_3d(
         project_vertex(&start, view_proj),
         project_vertex(&end, view_proj),
     ) {
-        // Algoritmo de línea de Bresenham
         let mut x0 = p0.0;
         let mut y0 = p0.1;
         let x1 = p1.0;
@@ -262,9 +219,9 @@ fn render_ecliptic_plane(
     view_proj: &Matrix4<f32>,
     _max_radius: f32,
 ) {
-    // Dibujar círculos de órbita para cada planeta (5 planetas = 5 círculos)
-    let orbit_color = rgb_to_u32(100, 140, 200);  // Azul más visible
-    let orbit_radii = vec![6.0, 9.0, 12.0, 15.0, 18.0]; // Radios de los 5 planetas - órbitas más juntas
+    // Dibujar círculos de órbita para cada planeta 
+    let orbit_color = rgb_to_u32(100, 140, 200);  
+    let orbit_radii = vec![6.0, 9.0, 12.0, 15.0, 18.0]; 
     
     for &radius in &orbit_radii {
         let segments = 64;
@@ -288,39 +245,7 @@ fn render_ecliptic_plane(
     }
 }
 
-fn render_coordinate_axes(
-    framebuffer: &mut Framebuffer,
-    view_proj: &Matrix4<f32>,
-) {
-    let axis_length = 50.0;
-    
-    // Eje X - Rojo
-    draw_line_3d(
-        framebuffer,
-        Vec3::new(0.0, 0.0, 0.0),
-        Vec3::new(axis_length, 0.0, 0.0),
-        view_proj,
-        rgb_to_u32(255, 0, 0),
-    );
-    
-    // Eje Y - Verde
-    draw_line_3d(
-        framebuffer,
-        Vec3::new(0.0, 0.0, 0.0),
-        Vec3::new(0.0, axis_length, 0.0),
-        view_proj,
-        rgb_to_u32(0, 255, 0),
-    );
-    
-    // Eje Z - Azul
-    draw_line_3d(
-        framebuffer,
-        Vec3::new(0.0, 0.0, 0.0),
-        Vec3::new(0.0, 0.0, axis_length),
-        view_proj,
-        rgb_to_u32(0, 0, 255),
-    );
-}
+
 
 fn render_planet(
     framebuffer: &mut Framebuffer,
@@ -348,12 +273,10 @@ fn render_planet(
         let uv1 = uvs[i1];
         let uv2 = uvs[i2];
 
-        // Vertex shader
         let (pos0, norm0) = planet.shader.vertex_shader(*v0, *n0, uv0, uniforms);
         let (pos1, norm1) = planet.shader.vertex_shader(*v1, *n1, uv1, uniforms);
         let (pos2, norm2) = planet.shader.vertex_shader(*v2, *n2, uv2, uniforms);
 
-        // Transform and project
         let world_v0 = transform_vertex(&pos0, &model);
         let world_v1 = transform_vertex(&pos1, &model);
         let world_v2 = transform_vertex(&pos2, &model);
@@ -363,7 +286,6 @@ fn render_planet(
             project_vertex(&world_v1, &mvp),
             project_vertex(&world_v2, &mvp),
         ) {
-            // Fragment shader
             let c0 = planet.shader.fragment_shader(pos0, norm0, uv0, uniforms);
             let c1 = planet.shader.fragment_shader(pos1, norm1, uv1, uniforms);
             let c2 = planet.shader.fragment_shader(pos2, norm2, uv2, uniforms);
@@ -389,76 +311,68 @@ fn main() {
     let mut framebuffer = Framebuffer::new(WIDTH, HEIGHT);
 
     let mut camera = Camera::new(40.0);
-    let projection = Matrix4::new_perspective(
-        WIDTH as f32 / HEIGHT as f32,
-        FOV,
-        NEAR,
-        FAR,
+    // Usar la función manual de creación de matriz de proyección
+    let projection = create_projection_matrix(
+        FOV,                      // fov_y en radianes
+        WIDTH as f32 / HEIGHT as f32,  // aspect ratio
+        NEAR,                     // near plane
+        FAR,                      // far plane
     );
 
-    // Crear el sol en el centro (GRANDE)
+    // Crear el sol
     let sun = Planet::new(
         Box::new(SunShader),
-        0.0,   // No orbita
-        2.0,   // Sol grande
+        0.0,   
+        2.0,   
         0.1,
         0.0,
-        0.0,  // Ángulo inicial (no importa, no orbita)
+        0.0,  
     );
 
-    // Crear planetas con diferentes órbitas y características
-    // Cada planeta comienza en un ángulo diferente para distribución en espiral
-    // Escalas pequeñas para que se vean distintos del sol
-    // Velocidades orbitales reducidas para mejor visualización
+    //Crear planetas
     let mut planets = vec![
-        // Planeta rocoso cercano - pequeño - 0 radianes (0°)
         Planet::new(
             Box::new(RockyPlanetShader),
-            3.6,   // Radio orbital - órbitas más juntas
-            0.7,   // Más pequeño para claridad
+            2.7,   // Radio orbital - órbitas más juntas
+            1.2,   // Más pequeño para claridad
             0.2,
             0.3,   // Velocidad orbital
-            0.0,   // Comienza en 0°
+            0.0,   
         ),
-        // Gigante gaseoso - grande pero menor que el sol - π/2.5 radianes (~72°)
         Planet::new(
-            Box::new(GasGiantShader),
+            Box::new(GasPlanetShader),
             5.3,   // Radio orbital - órbitas más juntas
             0.7,   // Reducido para que no tape otras órbitas
             0.15,
             0.2,   // Velocidad orbital
             std::f32::consts::PI / 2.5,  // Comienza en ~72°
         ),
-        // Planeta de cristal - mediano - π radianes (180°)
         Planet::new(
             Box::new(CrystalPlanetShader),
             6.5,  // Radio orbital - órbitas más juntas
             0.85,  // Más pequeño para claridad
             0.2,
             0.15,  // Velocidad orbital
-            std::f32::consts::PI,  // Comienza en 180°
+            std::f32::consts::PI,  
         ),
-        // Planeta de lava - pequeño - 4π/3 radianes (~240°)
         Planet::new(
-            Box::new(LavaPlanetShader),
-            11.35,  // Radio orbital - órbitas más juntas
-            0.32,  // Más pequeño para claridad
+            Box::new(NebulaPlanetShader),
+            9.3,  // Radio orbital - órbitas más juntas
+            0.6,  // Más pequeño para claridad
             0.25,
             0.12,  // Velocidad orbital
             4.0 * std::f32::consts::PI / 3.0,  // Comienza en ~240°
         ),
-        // Planeta con anillos (Saturno) - mediano - 3π/2 radianes (270°)
         Planet::new(
-            Box::new(SaturnShader),
-            12.0,  // Radio orbital - órbitas más juntas
-            0.5,   // Reducido para claridad
+            Box::new(MetallicPlanetShader),
+            8.6,  // Radio orbital - órbitas más juntas
+            1.1,   // Reducido para claridad
             0.12,
             0.1,   // Velocidad orbital
             3.0 * std::f32::consts::PI / 2.0,  // Comienza en 270°
         ),
     ];
 
-    // Cargar malla de esfera desde archivo OBJ
     let sphere_model = ObjModel::load("sphere.obj")
         .expect("No se pudo cargar el archivo sphere.obj");
     
@@ -472,10 +386,9 @@ fn main() {
     let start_time = std::time::Instant::now();
 
     while window.is_open() && !window.is_key_down(Key::Escape) {
-        let dt = 0.016; // ~60 FPS
+        let dt = 0.016; 
         let time = start_time.elapsed().as_secs_f32();
 
-        // Input de cámara
         if window.is_key_down(Key::Left) {
             camera.rotate(-0.05);
         }
@@ -495,12 +408,10 @@ fn main() {
             camera.change_height(-0.3);
         }
 
-        // Actualizar planetas
         for planet in &mut planets {
             planet.update(dt);
         }
 
-        // Limpiar buffers
         framebuffer.clear();
 
         let view = camera.get_view_matrix();
@@ -512,10 +423,8 @@ fn main() {
             camera_position: Vector3::new(camera.position.x, camera.position.y, camera.position.z),
         };
 
-        // Renderizar el plano eclíptico (primero, para que esté detrás)
+        render_skybox(&mut framebuffer, &view_proj, time, project_vertex);
         render_ecliptic_plane(&mut framebuffer, &view_proj, 50.0);
-
-        // Renderizar el sol
         render_planet(
             &mut framebuffer,
             &sun,
@@ -526,8 +435,6 @@ fn main() {
             &view_proj,
             &uniforms,
         );
-
-        // Renderizar planetas
         for planet in &planets {
             render_planet(
                 &mut framebuffer,

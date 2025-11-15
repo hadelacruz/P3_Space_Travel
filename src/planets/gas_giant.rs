@@ -1,45 +1,38 @@
-// ============================================================================
-// PLANETA 2: GIGANTE GASEOSO ESTILO JÚPITER
-// Características: Bandas horizontales con MUCHA TEXTURA y colores variados
-// ============================================================================
-
 use crate::vector::Vector3;
 use crate::shaders::{ShaderColor, ShaderUniforms, PlanetShader, fbm, smoothstep, mix_color};
 
-pub struct GasGiantShader;
+pub struct GasPlanetShader;
 
-impl PlanetShader for GasGiantShader {
+impl PlanetShader for GasPlanetShader {
     fn vertex_shader(&self, position: Vector3, normal: Vector3, _uv: (f32, f32), _uniforms: &ShaderUniforms) -> (Vector3, Vector3) {
         (position, normal)
     }
 
     fn fragment_shader(&self, _position: Vector3, normal: Vector3, uv: (f32, f32), uniforms: &ShaderUniforms) -> ShaderColor {
         // === PALETA DE JÚPITER - MUY CONTRASTADA ===
-        let very_dark = ShaderColor::from_rgb(60, 35, 15);         // Casi negro
-        let dark_brown = ShaderColor::from_rgb(110, 65, 25);       // Marrón oscuro
-        let rust_brown = ShaderColor::from_rgb(150, 85, 35);       // Óxido
-        let orange = ShaderColor::from_rgb(200, 120, 50);          // Naranja
-        let tan = ShaderColor::from_rgb(210, 150, 90);             // Bronceado
-        let beige = ShaderColor::from_rgb(230, 190, 130);          // Beige
-        let cream = ShaderColor::from_rgb(245, 220, 170);          // Crema
-        let white = ShaderColor::from_rgb(255, 250, 230);          // Blanco
-        let red_spot = ShaderColor::from_rgb(200, 60, 30);         // Rojo intenso
+        let very_dark = ShaderColor::from_rgb(60, 35, 15);         
+        let dark_brown = ShaderColor::from_rgb(110, 65, 25);    
+        let rust_brown = ShaderColor::from_rgb(150, 85, 35);      
+        let orange = ShaderColor::from_rgb(200, 120, 50);          
+        let tan = ShaderColor::from_rgb(210, 150, 90);             
+        let beige = ShaderColor::from_rgb(230, 190, 130);          
+        let cream = ShaderColor::from_rgb(245, 220, 170);          
+        let white = ShaderColor::from_rgb(255, 250, 230);         
+        let red_spot = ShaderColor::from_rgb(200, 60, 30);         
         
         let latitude = uv.1;
         let animated_longitude = uv.0 + uniforms.time * 0.015;
         
         // === BANDAS BASE CON TEXTURA ===
-        // Sistema de bandas alternadas (14 bandas como Júpiter real)
         let band_pos = latitude * 14.0;
         let band_index = band_pos.floor() as i32 % 8;
         let band_fract = band_pos.fract();
         
-        // TURBULENCIA HORIZONTAL FUERTE (corrientes de chorro)
         let jet_stream = fbm(
             animated_longitude * 12.0,
             latitude * 5.0,
             5
-        ) * 0.25; // Más turbulencia
+        ) * 0.25;
         
         // Remolinos y vórtices a lo largo de las bandas
         let vortices = fbm(
@@ -48,7 +41,7 @@ impl PlanetShader for GasGiantShader {
             4
         ) * 0.15;
         
-        // Textura fina (nubes pequeñas)
+        // Textura fina
         let fine_texture = fbm(
             animated_longitude * 25.0,
             latitude * 20.0,
@@ -73,16 +66,14 @@ impl PlanetShader for GasGiantShader {
         
         let mut final_color = base_color;
         
-        // === GRAN MANCHA ROJA (más grande y visible) ===
         let storm_x = 0.3;
         let storm_y = 0.4;
-        let dx = (animated_longitude - storm_x) * 2.5; // Elipse horizontal
+        let dx = (animated_longitude - storm_x) * 2.5; 
         let dy = latitude - storm_y;
         let dist_storm = (dx * dx + dy * dy).sqrt();
         
         if dist_storm < 0.15 {
             let strength = smoothstep(0.15, 0.06, dist_storm);
-            // Rotación interna del remolino
             let angle = dy.atan2(dx);
             let spiral = (angle * 3.0 - dist_storm * 10.0 + uniforms.time * 0.5).sin() * 0.5 + 0.5;
             let storm_color = mix_color(red_spot, orange, spiral);

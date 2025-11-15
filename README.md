@@ -15,6 +15,7 @@ Simulación de un sistema solar procedural usando un software renderer diseñado
 - ✅ **Rotación sobre el Eje**: Todos los cuerpos rotan sobre sí mismos
 - ✅ **Cámara Móvil**: Control completo de la cámara en el plano eclíptico
 - ✅ **Shaders Procedurales**: Cada planeta tiene su shader único
+- ✅ **Skybox Estelar**: Fondo con ~800 estrellas procedurales que parpadean
 
 ### Planetas del Sistema
 
@@ -80,6 +81,8 @@ El proyecto implementa un renderer completamente desde cero con:
 - **Rasterización de triángulos**: Algoritmo de edge function
 - **Z-Buffer**: Para resolver visibilidad
 - **Renderizado de líneas**: Algoritmo de Bresenham para el plano eclíptico
+- **Skybox Procedural**: Campo de estrellas con ~800 estrellas distribuidas uniformemente
+- **Parpadeo de Estrellas**: Efecto de twinkle con variación de brillo en tiempo real
 - **Plano Eclíptico Visual**: Cuadrícula 3D que muestra el plano orbital
 - **Círculos Orbitales**: Visualización de las trayectorias de cada planeta
 - **Ejes de Coordenadas**: Sistema de referencia RGB (X=Rojo, Y=Verde, Z=Azul)
@@ -96,6 +99,10 @@ src/
 ├── main.rs              # Renderer principal y loop del juego
 ├── vector.rs            # Matemáticas vectoriales
 ├── shaders.rs           # Sistema de shaders y utilidades
+├── framebuffer.rs       # Buffer de color y profundidad
+├── obj_loader.rs        # Cargador de modelos .obj
+├── skybox.rs            # Renderizado de estrellas de fondo
+├── matrix.rs            
 └── planets/
     ├── mod.rs          # Módulo de planetas
     ├── sun.rs          # Shader del sol
@@ -121,4 +128,6 @@ src/
 6. **Cámara Orbital**: Control intuitivo de la vista
 7. **Plano Eclíptico Visual**: Cuadrícula 3D y círculos orbitales
 8. **Sistema de Coordenadas**: Ejes X, Y, Z visibles para orientación
+9. **Skybox Estelar**: ~800 estrellas procedurales con efecto de parpadeo
+10. **Distribución Esférica**: Estrellas distribuidas uniformemente usando coordenadas esféricas
 

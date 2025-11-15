@@ -100,7 +100,7 @@ pub fn fbm(mut x: f32, mut y: f32, octaves: i32) -> f32 {
     value
 }
 
-// Función de ruido 3D
+// Función de ruido
 pub fn fbm3d(x: f32, y: f32, z: f32, octaves: i32) -> f32 {
     let mut value = 0.0;
     let mut amplitude = 0.5;
@@ -115,7 +115,6 @@ pub fn fbm3d(x: f32, y: f32, z: f32, octaves: i32) -> f32 {
     value
 }
 
-// Función de ruido Voronoi para efectos de celdas
 pub fn voronoi_noise(x: f32, y: f32) -> f32 {
     let cell_x = x.floor();
     let cell_y = y.floor();
@@ -136,7 +135,6 @@ pub fn voronoi_noise(x: f32, y: f32) -> f32 {
     min_dist
 }
 
-// Función de ruido ridge para efectos de montañas
 pub fn ridge_noise(x: f32, y: f32, octaves: i32) -> f32 {
     let mut value = 0.0;
     let mut amplitude = 0.5;

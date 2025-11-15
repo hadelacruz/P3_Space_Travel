@@ -1,16 +1,10 @@
-// ============================================================================
-// PLANETA 4: NEBULOSA ETÉREA CÓSMICA
-// Características: Gas etéreo, partículas estelares, efectos volumétricos
-// ============================================================================
-
 use crate::vector::Vector3;
 use crate::shaders::{ShaderColor, ShaderUniforms, PlanetShader, fbm, fbm3d, voronoi_noise, ridge_noise, simple_noise, smoothstep, mix_color};
 
-pub struct LavaPlanetShader;
+pub struct NebulaPlanetShader;
 
-impl PlanetShader for LavaPlanetShader {
+impl PlanetShader for NebulaPlanetShader {
     fn vertex_shader(&self, position: Vector3, normal: Vector3, _uv: (f32, f32), uniforms: &ShaderUniforms) -> (Vector3, Vector3) {
-        // Ondulación suave como gas etéreo
         let wave1 = (uniforms.time * 1.5 + position.x * 3.0 + position.y * 2.0).sin() * 0.03;
         let wave2 = (uniforms.time * 2.0 - position.z * 4.0 + position.y).cos() * 0.02;
         let wavy_position = position + normal * (wave1 + wave2);
@@ -19,18 +13,18 @@ impl PlanetShader for LavaPlanetShader {
 
     fn fragment_shader(&self, position: Vector3, normal: Vector3, uv: (f32, f32), uniforms: &ShaderUniforms) -> ShaderColor {
         // === PALETA NEBULOSA CÓSMICA ===
-        let void_black = ShaderColor::from_rgb(5, 0, 10);          // Vacío espacial
-        let deep_purple = ShaderColor::from_rgb(30, 0, 60);        // Púrpura profundo
-        let royal_purple = ShaderColor::from_rgb(75, 0, 130);      // Púrpura real
-        let magenta = ShaderColor::from_rgb(200, 0, 150);          // Magenta brillante
-        let hot_pink = ShaderColor::from_rgb(255, 20, 147);        // Rosa intenso
-        let electric_blue = ShaderColor::from_rgb(0, 100, 255);    // Azul eléctrico
-        let cyan_bright = ShaderColor::from_rgb(0, 255, 255);      // Cian brillante
-        let orange_flame = ShaderColor::from_rgb(255, 100, 0);     // Naranja fuego
-        let yellow_star = ShaderColor::from_rgb(255, 255, 100);    // Amarillo estelar
-        let white_hot = ShaderColor::from_rgb(255, 255, 255);      // Blanco caliente
+        let void_black = ShaderColor::from_rgb(5, 0, 10);          
+        let deep_purple = ShaderColor::from_rgb(30, 0, 60);        
+        let royal_purple = ShaderColor::from_rgb(75, 0, 130);      
+        let magenta = ShaderColor::from_rgb(200, 0, 150);          
+        let hot_pink = ShaderColor::from_rgb(255, 20, 147);        
+        let electric_blue = ShaderColor::from_rgb(0, 100, 255);    
+        let cyan_bright = ShaderColor::from_rgb(0, 255, 255);      
+        let orange_flame = ShaderColor::from_rgb(255, 100, 0);     
+        let yellow_star = ShaderColor::from_rgb(255, 255, 100);    
+        let white_hot = ShaderColor::from_rgb(255, 255, 255);     
         
-        // === CAPA 1: GAS NEBULAR BASE (Movimiento lento y fluido) ===
+        // === CAPA 1: GAS NEBULAR BASE 
         let nebula_gas1 = fbm3d(
             position.x * 2.0 + uniforms.time * 0.03,
             position.y * 2.0 + uniforms.time * 0.02,
@@ -120,46 +114,39 @@ impl PlanetShader for LavaPlanetShader {
             base_color = mix_color(base_color, gas_color, 0.9);
         }
         
-        // Aplicar remolinos de polvo con colores naranjas
         if dust_swirls > 0.55 {
             let dust_color = mix_color(orange_flame, yellow_star, smoothstep(0.55, 0.75, dust_swirls));
             let dust_alpha = smoothstep(0.55, 0.7, dust_swirls) * 0.6;
             base_color = mix_color(base_color, dust_color, dust_alpha);
         }
         
-        // Campos de ionización (azul eléctrico)
         if ion_fields > 0.6 {
             let ion_color = mix_color(electric_blue, cyan_bright, cosmic_pulse);
             let ion_alpha = smoothstep(0.6, 0.75, ion_fields) * 0.7;
             base_color = mix_color(base_color, ion_color, ion_alpha);
         }
         
-        // Vórtices magnéticos (rosa intenso)
         if vortex_intensity > 0.4 {
             let vortex_color = mix_color(hot_pink, magenta, cosmic_pulse);
             base_color = mix_color(base_color, vortex_color, vortex_intensity * 0.8);
         }
         
-        // Rayos cósmicos brillantes
         if ray_intensity > 0.5 {
             let ray_color = mix_color(cyan_bright, white_hot, energy_pulse1);
             base_color = mix_color(base_color, ray_color, ray_intensity * 0.9);
         }
         
-        // Estrellas en formación (muy brillantes)
         if proto_stars > 0.6 {
             let star_pulse = (uniforms.time * 5.0 + uv.0 * 50.0).sin() * 0.5 + 0.5;
             let star_color = mix_color(yellow_star, white_hot, star_pulse);
             base_color = mix_color(base_color, star_color, proto_stars);
         }
         
-        // Resplandor de estrellas
         if star_glow > 0.3 && star_glow < 0.7 {
             let glow_color = mix_color(orange_flame, yellow_star, cosmic_pulse);
             base_color = mix_color(base_color, glow_color, star_glow * 0.5);
         }
         
-        // Ondas de choque
         if shockwave_intensity > 0.5 {
             let shock_color = mix_color(cyan_bright, electric_blue, shockwave);
             base_color = mix_color(base_color, shock_color, shockwave_intensity * 0.7);
@@ -180,13 +167,8 @@ impl PlanetShader for LavaPlanetShader {
         let light_dir = uniforms.light_direction.normalize();
         let view_dir = (uniforms.camera_position - position).normalize();
         
-        // Muy poca iluminación direccional (luz propia)
         let diffuse = normal.dot(&light_dir).max(0.0) * 0.1;
-        
-        // Auto-iluminación fuerte (la nebulosa brilla por sí misma)
         let self_illumination = 1.2 + cosmic_pulse * 0.5 + volumetric_glow * 0.8;
-        
-        // Rim lighting etéreo
         let rim = (1.0 - view_dir.dot(&normal).abs()).powf(2.0);
         let rim_color = mix_color(
             mix_color(magenta, cyan_bright, energy_pulse1),
@@ -194,7 +176,6 @@ impl PlanetShader for LavaPlanetShader {
             energy_pulse2
         );
         
-        // Scattering interno
         let internal_scatter = (1.0 - nebula_density.abs()) * 0.3;
         
         let ambient = 0.1;
@@ -207,12 +188,10 @@ impl PlanetShader for LavaPlanetShader {
             1.0,
         );
         
-        // Añadir rim lighting etéreo
         if rim > 0.3 {
             final_color = mix_color(final_color, rim_color, rim * 0.7);
         }
         
-        // Bloom effect simulado
         if volumetric_glow > 0.6 {
             let bloom_intensity = smoothstep(0.6, 0.8, volumetric_glow) * 0.3;
             let bloom_color = ShaderColor::from_rgb(255, 200, 255);

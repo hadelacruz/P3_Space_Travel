@@ -9,16 +9,18 @@ pub struct Framebuffer {
 
 impl Framebuffer {
     pub fn new(width: usize, height: usize) -> Self {
+        let space_color = rgb_to_u32(5, 10, 30);
         Framebuffer {
             width,
             height,
-            buffer: vec![0; width * height],
+            buffer: vec![space_color; width * height],
             depth_buffer: vec![f32::INFINITY; width * height],
         }
     }
 
     pub fn clear(&mut self) {
-        self.buffer.fill(0);
+        let space_color = rgb_to_u32(5, 10, 30);
+        self.buffer.fill(space_color);
         self.depth_buffer.fill(f32::INFINITY);
     }
 

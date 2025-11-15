@@ -1,8 +1,3 @@
-// ============================================================================
-// PLANETA 3: PLANETA SCI-FI TECNOLÓGICO
-// Características: Líneas de energía, circuitos, pulsos tecnológicos, hologramas
-// ============================================================================
-
 use crate::vector::Vector3;
 use crate::shaders::{ShaderColor, ShaderUniforms, PlanetShader, fbm, fbm3d, voronoi_noise, simple_noise, smoothstep, mix_color};
 
@@ -18,14 +13,14 @@ impl PlanetShader for CrystalPlanetShader {
 
     fn fragment_shader(&self, position: Vector3, normal: Vector3, uv: (f32, f32), uniforms: &ShaderUniforms) -> ShaderColor {
         // === PALETA TECNOLÓGICA ===
-        let base_dark = ShaderColor::from_rgb(10, 15, 30);         // Base oscura
-        let tech_blue = ShaderColor::from_rgb(0, 150, 255);        // Azul tecnológico
-        let cyber_cyan = ShaderColor::from_rgb(0, 255, 255);       // Cian cibernético
-        let neon_green = ShaderColor::from_rgb(0, 255, 150);       // Verde neón
-        let electric_purple = ShaderColor::from_rgb(150, 0, 255);  // Púrpura eléctrico
-        let hot_pink = ShaderColor::from_rgb(255, 0, 150);         // Rosa caliente
-        let energy_white = ShaderColor::from_rgb(200, 255, 255);   // Blanco energético
-        let warning_orange = ShaderColor::from_rgb(255, 150, 0);   // Naranja advertencia
+        let base_dark = ShaderColor::from_rgb(10, 15, 30);         
+        let tech_blue = ShaderColor::from_rgb(0, 150, 255);        
+        let cyber_cyan = ShaderColor::from_rgb(0, 255, 255);       
+        let neon_green = ShaderColor::from_rgb(0, 255, 150);       
+        let electric_purple = ShaderColor::from_rgb(150, 0, 255);  
+        let hot_pink = ShaderColor::from_rgb(255, 0, 150);         
+        let energy_white = ShaderColor::from_rgb(200, 255, 255);   
+        let warning_orange = ShaderColor::from_rgb(255, 150, 0);   
         
         // === CAPA 1: GRILLA TECNOLÓGICA BASE ===
         let grid_size = 20.0;
@@ -149,14 +144,11 @@ impl PlanetShader for CrystalPlanetShader {
         let light_dir = uniforms.light_direction.normalize();
         let view_dir = (uniforms.camera_position - position).normalize();
         
-        // Iluminación mínima (el planeta se auto-ilumina)
         let diffuse = normal.dot(&light_dir).max(0.0) * 0.2;
         
-        // Rim lighting holográfico
         let rim = (1.0 - view_dir.dot(&normal).abs()).powf(3.0);
         let rim_color = mix_color(cyber_cyan, hot_pink, (uniforms.time * 2.0).sin() * 0.5 + 0.5);
         
-        // Auto-iluminación
         let self_illumination = 0.8 + energy_pulse * 0.3;
         
         let ambient = 0.2;
@@ -169,7 +161,6 @@ impl PlanetShader for CrystalPlanetShader {
             1.0,
         );
         
-        // Añadir rim lighting
         if rim > 0.4 {
             final_color = mix_color(final_color, rim_color, rim * 0.8);
         }
